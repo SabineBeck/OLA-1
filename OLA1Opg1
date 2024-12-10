@@ -1,0 +1,87 @@
+##################
+##OLA 1 Opgave 1##
+##################
+
+##Opgave 1.1##
+#Indlæs csv filen, med boligsiden data#
+library(readr)
+Boligsidendata <- read_delim("~/Desktop/Data Analyse/OLA 1/Boligsidendata prøv.csv", 
+                                  delim = ";", escape_double = FALSE, trim_ws = TRUE, 
+                                  skip = 1)
+View(Boligsidendata)
+
+#Fjern rækker, der ikke er data i#
+Boligsidendata <- Boligsidendata[-1,]
+Boligsidendata <- Boligsidendata[-501,]
+
+#Find rækkerne for de to boliger#
+række1 <- Boligsidendata[Boligsidendata$vej == "tousvej" & Boligsidendata$vejnr == 106 & Boligsidendata$postnr == 8230, ]
+række2 <- Boligsidendata[Boligsidendata$vej == "egevej" & Boligsidendata$vejnr == 20 & Boligsidendata$postnr == 7100, ]
+
+#Fjern NA værdier#
+række1 <- na.omit(række1)
+række2 <- na.omit(række2)
+
+#Tjek om rækkerne ser rigtige ud
+print(række1)
+print(række2)
+
+## Kombiner rækker i en tabel ## 
+kombineret_tabel <- rbind(række1, række2)
+
+##############
+##Opgave 1.2##
+#############
+
+#Find to nye boliger fra CSV-fil 
+
+#Identificer og find to boliger til salg i Ringsted, ved at bruge subset()#
+library(tidyverse)
+library(httr)
+
+boliger_ringsted <- subset(Boligsidendata, by == "ringsted")
+
+## gustav-wieds-vej 12, 4100 ringsted
+række3 <- boliger_ringsted[boliger_ringsted$vej == "gustav-wieds-vej" & boliger_ringsted$vejnr == 12 & boliger_ringsted$postnr == 4100, ]
+## sandagervej 8, 4100 Ringsted
+række4 <- boliger_ringsted[boliger_ringsted$vej == "sandagervej" & boliger_ringsted$vejnr == 8 & boliger_ringsted$postnr == 4100, ]
+
+## Kombiner de to nye boliger række 3 og række 4 med de orginale boliger række 1 og 2 ## 
+kombineret_tabel <- rbind(række1, række2, række3, række4)
+
+###Opgave 1.3 - besvares skriftligt##
+#Tilføj landsdel basseret på postnummer
+postnr_til_landsdel <- tribble( 
+  ~start, ~end, ~landsdel,
+  1000,   2999,   "Sjælland",
+  3000,   3699,   "Nordsjælland",
+  3700,   3799,   "Bornholm",
+  4000,   4999,   "Midtsjælland",
+  5000,   5999,   "Fyn",
+  6000,   6999,   "Sydjylland",
+  7000,   7999,   "Midtjylland",
+  8000,   8999,   "Østjylland", 
+  9000,   9499,   "Nordjylland",
+  9500,   9999,   "Nordvestjylland"
+)
+
+# funktion der matcher postnumre til landsdelen 
+find_landsdel <- function(postnr){
+  row <- postnr_til_landsdel %>% 
+    filter(postnr >= start & postnr <= end)
+  if(nrow(row) > 0){
+    return(row$landsdel)
+  } else{
+    return(NA)
+  }
+}
+
+#Tilføjer landsdel til Boligsidendata 
+Boligsidendata <- Boligsidendata %>% 
+  mutate(
+    landsdel = sapply(as.numeric(as.character(postnr)), find_landsdel)
+  )
+##Tjek boligsiden
+head(Boligsidendata)
+
+###Opgave 1.4 - besvares skiftligt##
